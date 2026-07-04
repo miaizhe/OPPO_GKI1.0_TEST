@@ -72,6 +72,7 @@ jobs:
           find drivers/rekernel/ -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' {} + 2>/dev/null || true
           sed -i 's/#define MIN_USERAPP_UID/\/\/ #define MIN_USERAPP_UID/g' drivers/rekernel/rekernel.h
           sed -i 's/#define MAX_SYSTEM_UID/\/\/ #define MAX_SYSTEM_UID/g' drivers/rekernel/rekernel.h
+          sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c
           
       - name: Compile Kernel
         run: |
