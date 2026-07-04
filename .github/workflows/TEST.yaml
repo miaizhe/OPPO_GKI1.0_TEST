@@ -28,6 +28,7 @@ jobs:
           repository: miaizhe/Kernel_oppo_sm7325_Reno10
           path: kernel/msm-5.4
           fetch-depth: 1
+          ref: began
 
       - name: Checkout Modules Source
         uses: actions/checkout@v6
@@ -80,6 +81,17 @@ jobs:
           else
               echo "=== [ERROR] cgroup_freezing definition not found! ===" && exit 1
           fi
+          sed -i '/#include/a \
+          static bool (*cgroup_freezing_ptr)(struct task_struct *task) = NULL;' drivers/net/rekernel/rekernel.c
+          sed -i '/register_kprobe/i \
+          if (!cgroup_freezing_ptr) {\
+              struct kprobe kp = { .symbol_name = "cgroup_freezing" };\
+              if (register_kprobe(&kp) == 0) {\
+                  cgroup_freezing_ptr = (void *)kp.addr;\
+                  unregister_kprobe(&kp);\
+              }\
+          }' drivers/net/rekernel/rekernel.c
+          sed -i 's/\bcgroup_freezing(/cgroup_freezing_ptr(/g' drivers/net/rekernel/rekernel.c
           
       - name: Compile Kernel
         run: |
