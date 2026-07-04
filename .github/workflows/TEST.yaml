@@ -64,6 +64,8 @@ jobs:
           mkdir -p drivers/rekernel
           curl -LSs "https://raw.githubusercontent.com/miaizhe/OPPO_GKI1.0_TEST/refs/heads/main/rekernel_extra.patch" -o rekernel_extra.patch
           patch -p1 < rekernel_extra.patch || true
+          sed -i '1i#include <net/rekernel.h>' drivers/android/binder.c
+          sed -i '1i#include <net/rekernel.h>' kernel/signal.c
           
       - name: Compile Kernel
         run: |
