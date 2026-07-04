@@ -72,7 +72,8 @@ jobs:
           find drivers/net/rekernel/ -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' {} + 2>/dev/null || true
           sed -i 's/#define MIN_USERAPP_UID/\/\/ #define MIN_USERAPP_UID/g' drivers/net/rekernel/rekernel.h
           sed -i 's/#define MAX_SYSTEM_UID/\/\/ #define MAX_SYSTEM_UID/g' drivers/net/rekernel/rekernel.h
-          sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c
+          sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/netfilter/rekernel.c 2>/dev/null || true
+          sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c 2>/dev/null || true
           cat << 'EOF' > rekernel_patch.c
           #include <linux/kprobes.h>
           #include <linux/sched.h>
