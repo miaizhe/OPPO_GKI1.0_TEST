@@ -73,6 +73,13 @@ jobs:
           sed -i 's/#define MIN_USERAPP_UID/\/\/ #define MIN_USERAPP_UID/g' drivers/rekernel/rekernel.h
           sed -i 's/#define MAX_SYSTEM_UID/\/\/ #define MAX_SYSTEM_UID/g' drivers/rekernel/rekernel.h
           sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c
+          target_file=$(grep -rl "bool cgroup_freezing" kernel/ 2>/dev/null | head -n 1)
+          if [ ! -z "$target_file" ]; then
+              echo -e "\nEXPORT_SYMBOL_GPL(cgroup_freezing);" >> "$target_file"
+              echo "=== [SUCCESS] Exported cgroup_freezing in $target_file ==="
+          else
+              echo "=== [ERROR] cgroup_freezing definition not found! ===" && exit 1
+          fi
           
       - name: Compile Kernel
         run: |
