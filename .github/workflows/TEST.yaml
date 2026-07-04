@@ -75,16 +75,23 @@ jobs:
           sed -i 's/#define MAX_SYSTEM_UID/\/\/ #define MAX_SYSTEM_UID/g' drivers/rekernel/rekernel.h
           sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c
           target_file=$(grep -rl "bool cgroup_freezing" kernel/ 2>/dev/null | head -n 1)
-          sed -i '/#include/a \
-          static bool (*cgroup_freezing_ptr)(struct task_struct *task) = NULL;' drivers/net/rekernel/rekernel.c
-          sed -i '/register_kprobe/i \
-          if (!cgroup_freezing_ptr) {\
-              struct kprobe kp = { .symbol_name = "cgroup_freezing" };\
-              if (register_kprobe(&kp) == 0) {\
-                  cgroup_freezing_ptr = (void *)kp.addr;\
-                  unregister_kprobe(&kp);\
-              }\
-          }' drivers/net/rekernel/rekernel.c
+          cat << 'EOF' > rekernel_patch.c
+          #include <linux/kprobes.h>
+          #include <linux/sched.h>
+          static bool rekernel_cgroup_freezing(struct task_struct *task) {
+              static bool (*fn)(struct task_struct *) = NULL;
+              if (!fn) {
+                  struct kprobe kp = { .symbol_name = "cgroup_freezing" };
+                  if (register_kprobe(&kp) == 0) {
+                      fn = (void *)kp.addr;
+                      unregister_kprobe(&kp);
+                  }
+              }
+              return fn ? fn(task) : false;
+          }
+          EOF
+          cat rekernel_patch.c drivers/net/rekernel/rekernel.c > temporary.c && mv temporary.c drivers/net/rekernel/rekernel.c
+          rm rekernel_patch.c
           sed -i 's/\bcgroup_freezing(/cgroup_freezing_ptr(/g' drivers/net/rekernel/rekernel.c
           
       - name: Compile Kernel
