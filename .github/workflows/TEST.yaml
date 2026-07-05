@@ -99,8 +99,30 @@ jobs:
               fi
           done
           rm -f rekernel_patch.h
-          # ==============================================================================================
-          
+          cat << 'EOF' > rekernel_patch_helper.h
+          #include <linux/kprobes.h>
+          #include <linux/sched.h>
+
+          static bool rekernel_cgroup_freezing(struct task_struct *task) {
+              static bool (*fn)(struct task_struct *) = NULL;
+              if (!fn) {
+                  struct kprobe kp = { .symbol_name = "cgroup_freezing" };
+                  if (register_kprobe(&kp) == 0) {
+                      fn = (void *)kp.addr;
+                      unregister_kprobe(&kp);
+                  }
+              }
+              return fn ? fn(task) : false;
+          }
+          EOF
+          find drivers/net/rekernel/ -name "*.c" | while read -r file; do
+              if grep -q "cgroup_freezing" "$file"; then
+                  echo "修复文件: $file"
+                  sed -i '1i#include "rekernel_patch_helper.h"' "$file"
+                  sed -i -E 's/\bcgroup_freezing\s*\(/rekernel_cgroup_freezing(/g' "$file"
+              fi
+          done
+          mv rekernel_patch_helper.h drivers/net/rekernel/
       - name: Compile Kernel
         run: |
           export PATH="$(pwd)/compiler/clang-bin/bin:$PATH"
