@@ -74,8 +74,6 @@ jobs:
           sed -i 's/#define MAX_SYSTEM_UID/\/\/ #define MAX_SYSTEM_UID/g' drivers/net/rekernel/rekernel.h
           sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/netfilter/rekernel.c 2>/dev/null || true
           sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c 2>/dev/null || true
-          
-          # ==== 核心修复：自动全盘扫描，彻底根除 cgroup_freezing 未导出符号导致的 modpost 错误 ====
           cat << 'EOF' > rekernel_patch.h
           #include <linux/kprobes.h>
           #include <linux/sched.h>
@@ -91,8 +89,6 @@ jobs:
               return fn ? fn(task) : false;
           }
           EOF
-
-          # 全自动化动态寻找包含 cgroup_freezing 的相关源码并进行安全注入与精准替换
           find drivers/net/rekernel/ drivers/net/netfilter/ -name "*.c" 2>/dev/null | while read -r file; do
               if grep -q "cgroup_freezing" "$file"; then
                   echo "Patching cgroup_freezing reference in: $file"
