@@ -74,6 +74,7 @@ jobs:
           sed -i 's/#define MAX_SYSTEM_UID/\/\/ #define MAX_SYSTEM_UID/g' drivers/net/rekernel/rekernel.h
           sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/netfilter/rekernel.c 2>/dev/null || true
           sed -i 's/\bSIGNAL\b/REKERNEL_SIGNAL/g' drivers/net/rekernel/rekernel.c 2>/dev/null || true
+          
           cat << 'EOF' > rekernel_patch.h
           #include <linux/kprobes.h>
           #include <linux/sched.h>
@@ -89,7 +90,8 @@ jobs:
               return fn ? fn(task) : false;
           }
           EOF
-          find drivers/net/rekernel/ drivers/net/netfilter/ -name "*.c" 2>/dev/null | while read -r file; do
+
+          find drivers/net/rekernel/ drivers/net/netfilter/ drivers/rekernel/ -name "*.c" 2>/dev/null | while read -r file; do
               if grep -q "cgroup_freezing" "$file"; then
                   echo "Patching cgroup_freezing reference in: $file"
                   cat rekernel_patch.h "$file" > temporary.c && mv temporary.c "$file"
